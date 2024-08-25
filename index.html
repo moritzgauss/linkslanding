@@ -1,0 +1,193 @@
+<!--
+ __  __       ____  
+|  \/  |     / ___| 
+| \  / |    | | __  
+| |\/| |    | |(  | 
+| |  | |  _ | |_) |  _ 
+(_)  (_) (_) \____| (_)
+
+-->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>links landing</title>
+    <link rel="icon" href="https://i.pinimg.com/564x/f4/8a/45/f48a4575f7f83b05c1c0a956cac4a597.jpg">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #ffffff;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            user-select: none; 
+        }
+
+        #center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            font-weight: bold;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .falling-item {
+            position: absolute;
+            white-space: nowrap;
+            line-height: 1.5;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .falling-item:active {
+            cursor: grabbing;
+        }
+
+        @media (max-width: 768px) {
+            .falling-item {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="center-text">linkslanding</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script>
+        const { Engine, Render, Runner, Bodies, Composite, World, Events } = Matter;
+
+        const engine = Engine.create();
+        const world = engine.world;
+
+        const render = Render.create({
+            element: document.body,
+            engine: engine,
+            options: {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                wireframes: false,
+                background: '#ffffff',
+            }
+        });
+
+        Render.run(render);
+        Runner.run(Runner.create(), engine);
+
+        const ground = Bodies.rectangle(window.innerWidth / 2, window.innerHeight + 50, window.innerWidth, 100, { 
+            isStatic: true, 
+            render: { visible: false }
+        });
+
+        const leftWall = Bodies.rectangle(-50, window.innerHeight / 2, 100, window.innerHeight, { 
+            isStatic: true, 
+            render: { visible: false }
+        });
+
+        const rightWall = Bodies.rectangle(window.innerWidth + 50, window.innerHeight / 2, 100, window.innerHeight, { 
+            isStatic: true, 
+            render: { visible: false }
+        });
+
+        World.add(world, [ground, leftWall, rightWall]);
+
+        const textWidth = 200;
+        const textHeight = 50;
+        const textBody = Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, textWidth, textHeight, {
+            isStatic: true,
+            render: {
+                fillStyle: 'transparent'
+            }
+        });
+
+        World.add(world, textBody);
+
+        const texts = [
+            { content: 'Your Linki Dinki 1', font: 'Arial', size: 16, color: '#FF69B4' },
+            { content: 'look8this 👀', font: 'Pinyon Script', size: 16, color: '#FFD700' },
+            { content: 'Normaler Text', font: 'Times New Roman', size: 16, color: '#0000FF' },
+            { content: 'DONT CLICK', font: 'Arial', size: 16, color: '#FF4500' }
+        ];
+        const emojis = ['😀', '😎', '💖', '🌟', '🍀', '🎉', '🔥', '🎈', '❤️', '💸', '🎶', '🚀'];
+
+        function createFallingItems() {
+            texts.forEach(text => createFallingItem('text', text));
+            emojis.forEach(emoji => createFallingItem('emoji', emoji));
+        }
+
+        function createFallingItem(type, content) {
+            const x = Math.random() * window.innerWidth;
+            const y = -50;
+
+            let element = document.createElement('div');
+            element.className = 'falling-item';
+
+            if (type === 'text') {
+                element.style.fontFamily = content.font;
+                element.style.fontSize = `${content.size}px`;
+                element.style.color = content.color;
+                element.textContent = content.content;
+            } else if (type === 'emoji') {
+                element.style.fontSize = '20px';
+                element.textContent = content;
+            }
+
+            document.body.appendChild(element);
+
+            const elementWidth = element.offsetWidth;
+            const elementHeight = element.offsetHeight;
+
+            const body = Bodies.rectangle(x, y, elementWidth, elementHeight, {
+                render: {
+                    fillStyle: 'transparent'
+                },
+                angle: Math.random() * 0.2 - 0.1, 
+                friction: 0.001,
+                restitution: 0.6,
+                density: 0.01
+            });
+
+            World.add(world, body);
+
+            Events.on(engine, 'afterUpdate', () => {
+                element.style.left = `${body.position.x - elementWidth / 2}px`;
+                element.style.top = `${body.position.y - elementHeight / 2}px`;
+                element.style.transform = `rotate(${body.angle}rad)`;
+            });
+
+            let isDragging = false;
+
+            element.addEventListener('mousedown', function(event) {
+                isDragging = true;
+                element.style.cursor = 'grabbing';
+                Matter.Body.setStatic(body, true);             });
+
+            document.addEventListener('mousemove', function(event) {
+                if (isDragging) {
+                    const mouseX = event.clientX;
+                    const mouseY = event.clientY;
+                    Matter.Body.setPosition(body, { x: mouseX, y: mouseY });
+                }
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    element.style.cursor = 'grab';
+                    Matter.Body.setStatic(body, false);                 }
+            });
+        }
+
+        createFallingItems();
+        setInterval(createFallingItems, 3000);
+
+    </script>
+
+</body>
+</html>
